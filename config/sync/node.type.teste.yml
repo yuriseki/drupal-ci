@@ -1,0 +1,18 @@
+uuid: cfe3efba-408e-4132-b63c-3d51f2b30aca
+langcode: en
+status: true
+dependencies:
+  module:
+    - menu_ui
+third_party_settings:
+  menu_ui:
+    available_menus:
+      - main
+    parent: 'main:'
+name: Teste
+type: teste
+description: ''
+help: ''
+new_revision: true
+preview_mode: 1
+display_submitted: true

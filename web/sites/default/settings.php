@@ -33,3 +33,4 @@ if (file_exists($local_settings)) {
   include $local_settings;
 }
 
+$settings['config_sync_directory'] = '../config/sync';
