@@ -1,0 +1,63 @@
+name: Build and Deploy
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Verify DEPLOY_REPO
+        if: "${{ vars.DEPLOY_REPO == '' }}"
+        run: echo "Add a DEPLOY_REPO Repository Variable at https://github.com/$GITHUB_REPOSITORY/settings/variables/actions for where to deploy to." && exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      #      - name: Node.js - Check if Required
+      #        id: nodejsrequired
+      #        uses: andstor/file-existence-action@v2
+      #        with:
+      #          files: "package.json"
+      #
+      #      - name: Node.js - Configure
+      #        uses: actions/setup-node@v3
+      #        if: steps.nodejsrequired.outputs.files_exists == 'true'
+      #        with:
+      #          node-version: 18
+      #
+      #      - name: Node.js - Test
+      #        run: npm it
+      #        if: steps.nodejsrequired.outputs.files_exists == 'true'
+
+      - name: Commit
+        run: |
+          git config --global user.name "${{ vars.CI_GIT_NAME }}"
+          git config --global user.email "${{ vars.CI_GIT_EMAIL }}"
+          mv -f .gitignore-deploy .gitignore
+          find web -type d -name .git -print0|xargs -0 rm -rf
+          find docroot -type d -name .git -print0|xargs -0 rm -rf
+          git add .
+          git commit -m "Built $GITHUB_REPOSITORY from: $GITHUB_SHA
+              All code changes should be committed to: https://github.com/$GITHUB_REPOSITORY
+              Any commits made directly to this Pantheon repository will be overwritten."
+
+      - name: Configure SSH
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.CI_SSH_KEY }}
+          config: ${{ vars.CI_SSH_CONFIG }}
+# Use the following value for CI_SSH_CONFIG
+#Host *drush.in
+#  StrictHostKeyChecking no
+          known_hosts: unnecessary
+
+      - name: Deploy
+        env:
+          deploy_repo: '${{ vars.DEPLOY_REPO }}'
+        run: |
+          git remote add deploy $deploy_repo
+          git push --force deploy HEAD:refs/heads/${GITHUB_REF##*/}
